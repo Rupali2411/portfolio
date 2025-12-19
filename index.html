@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scroll Driven Video with Frame-by-Frame Control</title>
+
+ <!-- font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<!-- GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #000;
+  color: #fff;
+  overflow-x: hidden;
+}
+
+/* LOADER */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.5s;
+}
+
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* PROGRESS BAR */
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, #4facfe, #00f2fe);
+  z-index: 100;
+}
+
+/* SCROLL INDICATOR */
+.scroll-indicator {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: 14px;
+  opacity: 0.8;
+  z-index: 10;
+}
+
+.scroll-indicator.hidden {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.scroll-indicator span {
+  display: block;
+  margin-top: 6px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* MAIN CONTAINER */
+.video-container {
+  position: relative;
+  height: 300vh;
+}
+
+#carVideo {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  object-fit: cover;
+  z-index: 1;
+}
+
+/* CONTENT OVERLAYS */
+.content-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 300vh;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.content-section {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 0 8vw;
+  justify-content: center;
+}
+
+.text-content {
+  opacity: 0;
+  transform: translateY(50px);
+}
+
+.overlay-title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 600;
+  margin-bottom: 16px;
+  line-height: 1.1;
+}
+
+.overlay-subtitle {
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  max-width: 520px;
+  opacity: 0.85;
+  line-height: 1.4;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOADER -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader"></div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- SCROLL HINT -->
+<div class="scroll-indicator" id="scrollIndicator">
+  Scroll to explore
+  <span>↓</span>
+</div>
+
+<!-- MAIN CONTAINER -->
+<div class="video-container">
+  <!-- VIDEO - YOUR SPECIFIC VIDEO -->
+  <video
+    id="carVideo"
+    src="https://crmleadgen.net/Mathh/Animation%201%2001.mp4"
+    muted
+    playsinline
+    preload="auto"
+  ></video>
+
+  <!-- CONTENT OVERLAY -->
+  <div class="content-overlay">
+    <!-- CONTENT 1 -->
+    <div class="content-section" style="top: 15vh;">
+      <div class="text-content" data-scroll-start="0" data-scroll-end="0.3">
+        <h1 class="overlay-title">Hi, I'm Rupali</h1>
+        <p class="overlay-subtitle">Front-End Developer by profession</p>
+      </div>
+    </div>
+
+    <!-- CONTENT 2 -->
+    <div class="content-section" style="top: 100vh;">
+      <div class="text-content" data-scroll-start="0.35" data-scroll-end="0.6">
+        <h1 class="overlay-title">I build smooth interfaces</h1>
+        <p class="overlay-subtitle">
+          Scroll-driven animations & delightful interactions
+        </p>
+      </div>
+    </div>
+
+    <!-- CONTENT 3 -->
+    <div class="content-section" style="top: 185vh;">
+      <div class="text-content" data-scroll-start="0.65" data-scroll-end="1">
+        <h1 class="overlay-title">Tech I use</h1>
+        <p class="overlay-subtitle">
+          HTML · CSS · JavaScript · WordPress · GSAP
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+const video = document.getElementById("carVideo");
+const loader = document.getElementById("loadingOverlay");
+const indicator = document.getElementById("scrollIndicator");
+const progressBar = document.getElementById("progressBar");
+
+/* VIDEO SCROLL CONTROL - Frame by Frame */
+video.addEventListener("loadedmetadata", () => {
+  setTimeout(() => loader.classList.add("hidden"), 400);
+
+  // Scroll-driven video playback (frame-accurate)
+  gsap.to(video, {
+    currentTime: video.duration,
+    ease: "none",
+    scrollTrigger: {
+      trigger: ".video-container",
+      start: "top top",
+      end: "bottom bottom",
+      scrub: 0.5, // Smooth frame scrubbing
+      onUpdate: self => {
+        // Update progress bar
+        progressBar.style.width = self.progress * 100 + "%";
+        
+        // Hide scroll indicator after start
+        self.progress > 0.05
+          ? indicator.classList.add("hidden")
+          : indicator.classList.remove("hidden");
+      }
+    }
+  });
+});
+
+// Fallback if video fails to load
+video.addEventListener("error", () => {
+  console.error("Video failed to load");
+  loader.classList.add("hidden");
+});
+
+// Animate text content with precise scroll timing
+gsap.utils.toArray(".text-content").forEach((text, i) => {
+  const start = parseFloat(text.dataset.scrollStart);
+  const end = parseFloat(text.dataset.scrollEnd);
+  
+  gsap.fromTo(text, 
+    {
+      opacity: 0,
+      y: 50
+    },
+    {
+      opacity: 1,
+      y: 0,
+      duration: 1,
+      scrollTrigger: {
+        trigger: text.parentElement,
+        start: `top+=${start * 100}vh center`,
+        end: `top+=${end * 100}vh center`,
+        scrub: true
+      }
+    }
+  );
+});
+</script>
+
+</body>
+</html>
